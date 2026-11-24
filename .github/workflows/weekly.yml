@@ -1,0 +1,32 @@
+name: Wekelijks vacature-overzicht
+
+on:
+  schedule:
+    - cron: "17 5 * * 1"   # elke maandag ~06:17 NL-tijd
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python run.py
+      - name: Data en rapport committen
+        run: |
+          git config user.name "lead-insights-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/ reports/
+          git diff --cached --quiet || git commit -m "Weekoverzicht $(date +%G-W%V)"
+          git push
+      - uses: actions/upload-artifact@v4
+        with:
+          name: weekoverzicht
+          path: reports/*.xlsx

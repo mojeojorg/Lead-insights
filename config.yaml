@@ -1,0 +1,27 @@
+# Wat telt als "relevante" vacature voor Mojeo.
+# Lege lijst = geen filter op dat veld.
+
+relevance:
+  # Vacature is relevant als de titel een van deze woorden bevat (hoofdletterongevoelig).
+  title_keywords: []
+  # Of als de branche (zoals Banenrijk die opgeeft) hierin staat, bv. finance, ict, techniek.
+  industries: []
+
+region:
+  # Regio's zoals Banenrijk ze noemt: "Zuid Limburg", "Midden Limburg", "Noord Limburg".
+  regions: []
+  # Of specifieke plaatsen.
+  cities: []
+
+# Bemiddelaars uitsluiten: bedrijfsnamen die een van deze woorden bevatten.
+exclude_companies:
+  - uitzend
+  - randstad
+  - adecco
+  - tempo-team
+  - youngcapital
+  - start people
+  - werving
+  - recruitment
+  - detachering
+  - payroll
