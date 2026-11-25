@@ -24,13 +24,24 @@ relevance:
   # Optioneel: alleen deze branches (leeg = alle branches).
   industries: []
 
-# Functiegroepen voor het dashboard: eerste groep waarvan een term in de titel staat.
+# Functiegroepen voor het dashboard. Volgorde telt: een vacature valt in de eerste groep
+# waarvan een term in de titel staat. "default: true" = standaard aan in het dashboard.
 function_groups:
-  PMO: [pmo]
-  Programma: [programmamanager, programma manager, program manager, programmaleider]
-  Agile: [agile coach, scrum master, scrummaster, product owner, release train]
-  Project: [projectleider, projectmanager, project manager, project lead, projectcontroller,
-            change manager, kwartiermaker]
+  - {name: PMO, default: true, terms: [pmo]}
+  - {name: Programma, default: true, terms: [programmamanager, programma manager, program manager, programmaleider]}
+  - {name: Agile, default: true, terms: [agile coach, scrum master, scrummaster, product owner, release train]}
+  - {name: Project, default: true, terms: [projectleider, projectmanager, project manager, project lead,
+                                           projectcontroller, change manager, kwartiermaker]}
+  - {name: Informatie & analyse, terms: [business analist, business analyst, informatieanalist, informatiemanager,
+                                         informatieadviseur, functioneel beheer, functioneel consultant,
+                                         data analist, data analyst, data steward, business intelligence]}
+  - {name: IT-specialist, terms: [architect, engineer, developer, ontwikkelaar, security officer, ciso, tiso,
+                                  systeembeheer, devops, ict, " it ", sap ]}
+  - {name: Management, terms: [manager, directeur, teamleider, teammanager, hoofd , leidinggevende, bestuurder]}
+  - {name: Advies & beleid, terms: [adviseur, beleid, consultant, regisseur]}
+
+# Branches standaard aan in het dashboard (Overheid wordt herkend op organisatienaam, zie sectors).
+default_branches: [Overheid, "Zorg & Welzijn", "ICT & Automatisering", "Management, Beleid & Directie"]
 
 # Sectoren met prioriteit voor Mojeo. Vacatures krijgen een sectorlabel;
 # prioriteitssectoren worden in het rapport gemarkeerd (niet weggefilterd).

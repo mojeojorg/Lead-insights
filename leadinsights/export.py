@@ -1,43 +1,86 @@
-"""Exporteert de relevante vacatures van een run als JSON voor het dashboard."""
+"""Export voor het dashboard.
+
+- dashboard_vacatures.json: alle vacatures van de laatste run, met functiegroep en branche.
+- dashboard_weken.json: per week (laatste 13 runs) het aantal vacatures per
+  functiegroep x branche x organisatie, voor de trends en het verschil met vorige week.
+"""
 
 import datetime as dt
 import json
+from collections import Counter
 
 from . import report
 
+BRANCHES = {
+    "zorg & welzijn": "Zorg & Welzijn", "techniek & productie": "Techniek & Productie",
+    "onderwijs & onderzoek": "Onderwijs & Onderzoek", "horeca & detailhandel": "Horeca & Detailhandel",
+    "finance": "Finance", "facilitair": "Facilitair", "logistiek & inkoop": "Logistiek & Inkoop",
+    "ict & automatisering": "ICT & Automatisering",
+    "kwaliteit, veiligheid & milieu": "Kwaliteit, Veiligheid & Milieu", "kwaliteit": "Kwaliteit, Veiligheid & Milieu",
+    "management, beleid & directie": "Management, Beleid & Directie", "management": "Management, Beleid & Directie",
+    "administratie": "Administratie", "overig": "Overig", "sales": "Sales", "hr": "HR",
+    "klantenservice & receptie": "Klantenservice & Receptie", "marketing & communicatie": "Marketing & Communicatie",
+    "juridisch": "Juridisch",
+}
+WEEKS = 13
+
 
 def function_group(title, cfg):
-    t = (title or "").lower()
-    for group, terms in (cfg.get("function_groups") or {}).items():
-        if any(term.lower() in t for term in terms):
-            return group
+    t = f" {(title or '').lower()} "
+    for g in cfg.get("function_groups") or []:
+        if any(term.lower() in t for term in g["terms"]):
+            return g["name"]
     return "Overig"
 
 
-def export(con, cfg, run_date, out_path):
+def branche(v, cfg):
+    if report.sector(v, cfg) == "Overheid":
+        return "Overheid"
+    first = (v["industry"] or "").split("|,|")[0].strip().lower()
+    return BRANCHES.get(first, "Overig")
+
+
+def iso_week(date_str):
+    y, w, _ = dt.date.fromisoformat(date_str).isocalendar()
+    return f"{y}-W{w:02d}"
+
+
+def _keep(v, cfg):
+    return not report._contains_any(v["company"], cfg.get("exclude_companies") or [])
+
+
+def export(con, cfg, run_date, out_dir):
     week_ago = (dt.date.fromisoformat(run_date) - dt.timedelta(days=7)).isoformat()
-    rows = []
+    vac = []
     for v in report._active(con, run_date):
-        if not report.is_relevant(v, cfg):
+        if not _keep(v, cfg):
             continue
-        rows.append({
-            "id": v["id"],
-            "week": run_date,
-            "functie": v["title"],
-            "groep": function_group(v["title"], cfg),
-            "bedrijf": v["company"],
-            "sector": report.sector(v, cfg),
-            "branche": (v["industry"] or "").replace("|,|", ", "),
-            "plaats": v["city"],
-            "regio": v["region"],
-            "geplaatst": v["date_posted"],
-            "nieuw": v["date_posted"] >= week_ago,
+        vac.append({
+            "id": v["id"], "week": iso_week(run_date), "peildatum": run_date,
+            "functie": v["title"], "groep": function_group(v["title"], cfg),
+            "bedrijf": v["company"], "branche": branche(v, cfg),
+            "plaats": v["city"], "regio": v["region"],
+            "geplaatst": v["date_posted"], "nieuw": v["date_posted"] >= week_ago,
             "geldig_tot": "" if (v["valid_through"] or "") >= "2030" else v["valid_through"],
-            "salaris_min": v.get("salary_min"),
-            "salaris_max": v.get("salary_max"),
             "url": v["url"],
         })
-    rows.sort(key=lambda r: (r["sector"], r["bedrijf"], r["functie"]))
-    with open(out_path, "w") as f:
-        f.write("[\n" + ",\n".join(json.dumps(r, ensure_ascii=False) for r in rows) + "\n]\n")
-    return rows
+    vac.sort(key=lambda r: (r["branche"], r["bedrijf"], r["functie"]))
+
+    runs = [r[0] for r in con.execute(
+        "SELECT run_date FROM runs WHERE run_date<=? ORDER BY run_date DESC LIMIT ?", (run_date, WEEKS))]
+    weeks = []
+    for rd in sorted(runs):
+        c = Counter()
+        for v in report._active(con, rd):
+            if _keep(v, cfg):
+                c[(function_group(v["title"], cfg), branche(v, cfg), v["company"])] += 1
+        weeks += [{"week": iso_week(rd), "peildatum": rd, "groep": g, "branche": b, "bedrijf": o, "vacatures": n}
+                  for (g, b, o), n in sorted(c.items())]
+
+    def dump(rows, name):
+        with open(out_dir / name, "w") as f:
+            f.write("[\n" + ",\n".join(json.dumps(r, ensure_ascii=False) for r in rows) + "\n]\n")
+
+    dump(vac, "dashboard_vacatures.json")
+    dump(weeks, "dashboard_weken.json")
+    return vac, weeks
