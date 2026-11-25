@@ -2,15 +2,45 @@
 # Lege lijst = geen filter op dat veld.
 
 relevance:
-  # Vacature is relevant als de titel een van deze woorden bevat (hoofdletterongevoelig).
-  title_keywords: []
-  # Of als de branche (zoals Banenrijk die opgeeft) hierin staat, bv. finance, ict, techniek.
+  # Relevant als de functietitel een van deze termen bevat (hoofdletterongevoelig).
+  title_keywords:
+    - projectleider
+    - projectmanager
+    - project manager
+    - programmamanager
+    - programma manager
+    - program manager
+    - programmaleider
+    - pmo
+    - project lead
+    - projectcontroller
+    - agile coach
+    - scrum master
+    - scrummaster
+    - product owner
+    - release train
+    - change manager
+    - kwartiermaker
+  # Optioneel: alleen deze branches (leeg = alle branches).
   industries: []
 
+# Sectoren met prioriteit voor Mojeo. Vacatures krijgen een sectorlabel;
+# prioriteitssectoren worden in het rapport gemarkeerd (niet weggefilterd).
+sectors:
+  Overheid:
+    company_keywords: [gemeente, provincie, waterschap, rijkswaterstaat, ministerie,
+                       rijksdienst, cbs, uwv, ggd, veiligheidsregio, belastingdienst,
+                       politie, defensie, rechtspraak, dji, rws]
+  Zorg:
+    industries: [zorg & welzijn]
+  ICT:
+    industries: [ict & automatisering]
+  Management:
+    industries: ["management, beleid & directie", management]
+priority_sectors: [Overheid, Zorg, ICT, Management]
+
 region:
-  # Regio's zoals Banenrijk ze noemt: "Zuid Limburg", "Midden Limburg", "Noord Limburg".
   regions: []   # leeg = alles (Limburg + Brabant)
-  # Of specifieke plaatsen.
   cities: []
 
 # Bemiddelaars uitsluiten: bedrijfsnamen die een van deze woorden bevatten.
