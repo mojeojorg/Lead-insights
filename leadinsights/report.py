@@ -18,8 +18,10 @@ def is_relevant(v, cfg):
     if _contains_any(v["company"], cfg.get("exclude_companies") or []):
         return False
     kw, ind = rel.get("title_keywords") or [], rel.get("industries") or []
+    # Banenrijk scheidt meerdere branches met "|,|"
+    v_ind = {p.strip().lower() for p in (v["industry"] or "").split("|,|")}
     if (kw or ind) and not (_contains_any(v["title"], kw) or
-                            (v["industry"] or "").lower() in [i.lower() for i in ind]):
+                            v_ind & {i.lower() for i in ind}):
         return False
     regions, cities = reg.get("regions") or [], reg.get("cities") or []
     if (regions or cities) and not (
