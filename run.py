@@ -48,7 +48,7 @@ def main():
     week = dt.date.fromisoformat(args.date).isocalendar()
     out = ROOT / "reports" / f"vacatures_{week.year}-W{week.week:02d}.xlsx"
     s = report.build(con, cfg, args.date, out)
-    print(f"\nWeek {week.week}: {s['relevant']} relevante vacatures bij {s['companies']} bedrijven"
+    print(f"\nWeek {week.week}: {s['relevant']} interessante vacatures bij {s['companies']} bedrijven"
           + (f", {s['new']} nieuw t.o.v. {s['previous_run']}" if s["previous_run"] else ""))
     for company, n in s["top"]:
         print(f"  {n:4d}  {company}")

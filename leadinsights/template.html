@@ -18,6 +18,8 @@
   .chip { font: inherit; font-size: 12px; cursor: pointer; border-radius: 999px; padding: 3px 10px; border: 1px solid var(--line); background: transparent; color: var(--muted); }
   .chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
   .chip.prio::after { content: " ★"; }
+  .chip.std { font-weight: 600; }
+  .recon { color: var(--muted); }
   .actions { display: flex; flex-wrap: wrap; gap: 14px; }
   .link { font: inherit; font-size: 12px; background: none; border: 0; padding: 0; color: var(--muted); text-decoration: underline; cursor: pointer; }
   .hint { color: var(--muted); font-size: 12px; margin: 0; }
@@ -81,10 +83,10 @@
 <body>
 <div class="wrap">
   <div class="controls">
-    <div class="frow" id="f-groepen"><span class="flabel">Functie</span></div>
+    <div class="frow" id="f-groepen"><span class="flabel">Functies</span></div>
     <div class="frow" id="f-branches"><span class="flabel">Branche</span></div>
     <div class="actions">
-      <button class="link" id="standaard">Standaardselectie</button>
+      <button class="link" id="standaard">Interessante functies, alle branches (standaard)</button>
       <button class="link" id="prio">Alleen prioriteitsbranches (★)</button>
       <button class="link" id="allef">Alle functies aan</button>
       <button class="link" id="alleb">Alle branches aan</button>
@@ -99,7 +101,7 @@
     </div>
     <div class="row-a">
       <div class="block">
-        <p class="h">Open vacatures deze week</p>
+        <p class="h">Open vacatures · interessante functies</p>
         <p class="total" id="totaal"></p>
         <p class="delta" id="delta"></p>
         <p style="margin:0">bij <b id="orgs"></b> organisaties, waarvan <b id="nieuw"></b> vacatures nieuw geplaatst in de laatste 7 dagen</p>
@@ -114,7 +116,7 @@
       <div class="block"><p class="h">Trend per functiegroep</p><div class="chart" id="c-groep"></div><div class="legend" id="l-groep"></div></div>
       <div class="block"><p class="h">Trend per branche · top 6</p><div class="chart" id="c-branche"></div><div class="legend" id="l-branche"></div></div>
     </div>
-    <p class="note">Telling per week op de peildatum. De meting loopt sinds week 48 van 2026; de trend vult zich wekelijks aan tot een venster van 13 weken.</p>
+    <p class="note">Telling per week op de peildatum, laatste 13 weken. Gemeten sinds week 48 van 2026. <b>≥</b> en stippellijn: reconstructie achteraf (ondergrens); vacatures die toen open stonden maar inmiddels gesloten zijn, ontbreken.</p>
   </section>
 
   <section class="sheet grow" id="blad2">
@@ -151,6 +153,9 @@ const weeks = [...new Set(WEKEN.map((r) => r.week))].sort();
 const cur = weeks[weeks.length - 1];
 const prev = weeks.length > 1 ? weeks[weeks.length - 2] : null;
 const peildatum = (WEKEN.find((r) => r.week === cur) || {}).peildatum || '';
+const RECON = new Set(WEKEN.filter((r) => r.reconstructie).map((r) => r.week));
+const prevRecon = prev !== null && RECON.has(prev);
+const fmtPrev = (p) => (p === null ? '' : (prevRecon ? '≥ ' : '') + fmt(p));
 
 function isoWeek(d) {
   const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
@@ -163,7 +168,7 @@ const windowWeeks = (() => { const end = new Date(`${peildatum}T00:00:00Z`); con
 function chips(id, key, list, onByDefault) {
   const box = document.getElementById(id);
   list.forEach((v) => {
-    const b = el('button', 'chip' + (key === 'branches' && PRIO.includes(v) ? ' prio' : ''), label(v, key === 'groepen' ? 'groep' : 'branche'));
+    const b = el('button', 'chip' + (key === 'branches' && PRIO.includes(v) ? ' prio' : '') + (key === 'groepen' && GROEPEN_STD.includes(v) ? ' std' : ''), label(v, key === 'groepen' ? 'groep' : 'branche'));
     b.dataset.key = key; b.dataset.value = v;
     b.addEventListener('click', () => { const l = state[key]; state[key] = l.includes(v) ? l.filter((x) => x !== v) : [...l, v]; render(); });
     box.appendChild(b);
@@ -181,7 +186,7 @@ function numTable(id, dim) {
   const tb = document.getElementById(id);
   const rows = perDim(dim);
   if (!rows.length) { const tr = el('tr'); const td = el('td', 'empty', 'Geen vacatures in deze selectie.'); td.colSpan = 3; tr.appendChild(td); tb.replaceChildren(tr); return; }
-  tb.replaceChildren(...rows.map((r) => { const tr = el('tr'); tr.append(el('td', dim === 'branche' && PRIO.includes(r.k) ? 'prio' : '', label(r.k, dim)), el('td', '', fmt(r.n)), el('td', '', r.p === null ? '' : fmt(r.p))); return tr; }));
+  tb.replaceChildren(...rows.map((r) => { const tr = el('tr'); tr.append(el('td', dim === 'branche' && PRIO.includes(r.k) ? 'prio' : '', label(r.k, dim)), el('td', '', fmt(r.n)), el('td', prevRecon ? 'recon' : '', fmtPrev(r.p))); return tr; }));
 }
 
 function trendSeries(dim, limit) {
@@ -215,10 +220,16 @@ function chart(id, series, dim) {
   const tip = el('div', 'tip'); tip.hidden = true;
   series.forEach(([name, pts], i) => {
     const col = COLORS[i % COLORS.length];
-    if (pts.length > 1) { const p = mk('path', { d: pts.map((q, j) => `${j ? 'L' : 'M'}${x(q.week)},${y(q.vacatures)}`).join(''), fill: 'none', 'stroke-width': 2 }); p.style.stroke = col; }
+    for (let j = 1; j < pts.length; j++) {
+      const a = pts[j - 1], b = pts[j];
+      const seg = mk('line', { x1: x(a.week), y1: y(a.vacatures), x2: x(b.week), y2: y(b.vacatures), 'stroke-width': 2 });
+      seg.style.stroke = col; if (RECON.has(a.week) || RECON.has(b.week)) seg.setAttribute('stroke-dasharray', '4 3');
+    }
     pts.forEach((q, j) => {
-      const c = mk('circle', { cx: x(q.week), cy: y(q.vacatures), r: j === pts.length - 1 ? 4 : 2.5 }); c.style.fill = col;
-      c.addEventListener('mouseenter', (ev) => { tip.textContent = `${dim ? label(name, dim) + ' · ' : ''}${shortWeek(q.week)}: ${fmt(q.vacatures)}`; tip.hidden = false; const b = box.getBoundingClientRect(); tip.style.left = `${Math.max(0, Math.min(ev.clientX - b.left + 8, b.width - 120))}px`; tip.style.top = `${Math.max(0, ev.clientY - b.top - 28)}px`; });
+      const rc = RECON.has(q.week);
+      const c = mk('circle', { cx: x(q.week), cy: y(q.vacatures), r: j === pts.length - 1 ? 4 : 3, 'stroke-width': 1.5 });
+      c.style.fill = rc ? 'var(--bg)' : col; c.style.stroke = col;
+      c.addEventListener('mouseenter', (ev) => { tip.textContent = `${dim ? label(name, dim) + ' · ' : ''}${shortWeek(q.week)}: ${rc ? '≥ ' : ''}${fmt(q.vacatures)}${rc ? ' (reconstructie)' : ''}`; tip.hidden = false; const b = box.getBoundingClientRect(); tip.style.left = `${Math.max(0, Math.min(ev.clientX - b.left + 8, b.width - 120))}px`; tip.style.top = `${Math.max(0, ev.clientY - b.top - 28)}px`; });
       c.addEventListener('mouseleave', () => { tip.hidden = true; });
     });
     if (!dim && pts.length) { const q = pts[pts.length - 1]; const tx = mk('text', { x: x(q.week), y: y(q.vacatures) - 8, 'text-anchor': 'middle' }); tx.textContent = fmt(q.vacatures); }
@@ -272,7 +283,8 @@ function details() {
 function render() {
   document.querySelectorAll('.chip').forEach((b) => b.setAttribute('aria-pressed', String(state[b.dataset.key].includes(b.dataset.value))));
   const g = state.groepen, b = state.branches;
-  const gt = g.length === GROEPEN.length ? 'alle functies' : (g.length ? g.map((x) => label(x, 'groep')).join(', ') : 'geen functies');
+  const isStd = g.length === GROEPEN_STD.length && GROEPEN_STD.every((x) => g.includes(x));
+  const gt = g.length === GROEPEN.length ? 'alle functies' : isStd ? 'interessante functies (Project, Programma, Agile, PMO)' : (g.length ? g.map((x) => label(x, 'groep')).join(', ') : 'geen functies');
   const prioOnly = b.length === PRIO.length && PRIO.every((x) => b.includes(x));
   const bt = b.length === BRANCHES.length ? 'alle branches' : prioOnly ? 'prioriteitsbranches' : (b.length ? `${b.length} branches` : 'geen branches');
   document.querySelectorAll('.filtertekst').forEach((s) => { s.textContent = `${gt} · ${bt}`; });
@@ -284,6 +296,7 @@ function render() {
   document.getElementById('totaal').textContent = fmt(n);
   const d = document.getElementById('delta');
   if (p === null) d.textContent = 'Eerste meting, nog geen vergelijking met vorige week';
+  else if (prevRecon) { d.replaceChildren(el('span', n > p ? 'up' : n < p ? 'down' : 'flat', `max. ${fmtD(n - p)}`), document.createTextNode(` t.o.v. vorige week (${fmtPrev(p)}, reconstructie)`)); }
   else { d.replaceChildren(el('span', n > p ? 'up' : n < p ? 'down' : 'flat', fmtD(n - p)), document.createTextNode(` t.o.v. vorige week (${fmt(p)})`)); }
   document.getElementById('orgs').textContent = fmt(new Set(sel.filter((r) => r.week === cur).map((r) => r.bedrijf)).size);
   document.getElementById('nieuw').textContent = fmt(VACATURES.filter((v) => match(v) && v.nieuw).length);

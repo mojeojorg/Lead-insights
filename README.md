@@ -1,6 +1,6 @@
 # Lead Insights – vacatures in Limburg
 
-Wekelijks overzicht van relevante vacatures per bedrijf, als input voor Mojeo.
+Wekelijks overzicht van vacatures voor interessante functies per bedrijf, als input voor Mojeo.
 
 ## Bronnen
 - **Banenrijk Limburg**: via de sitemap en de gestructureerde vacaturedata (JobPosting) op elke vacaturepagina.
