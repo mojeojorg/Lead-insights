@@ -84,3 +84,17 @@ def export(con, cfg, run_date, out_dir):
     dump(vac, "dashboard_vacatures.json")
     dump(weeks, "dashboard_weken.json")
     return vac, weeks
+
+
+def standalone(vac, weeks, run_date, out_dir):
+    """Losstaand HTML-weekrapport (geen account of internet nodig)."""
+    from pathlib import Path
+    tpl = (Path(__file__).parent / "template.html").read_text()
+    js = lambda rows: json.dumps(rows, ensure_ascii=False).replace("</", "<\\/")
+    week = iso_week(run_date)
+    html = (tpl.replace("/*VACATURES*/[]", js(vac))
+               .replace("/*WEKEN*/[]", js(weeks))
+               .replace("__WEEK__", f"week {int(week.split('-W')[1])} {week[:4]}"))
+    out = out_dir / f"vacatureradar_{week}.html"
+    out.write_text(html)
+    return out

@@ -53,8 +53,9 @@ def main():
     for company, n in s["top"]:
         print(f"  {n:4d}  {company}")
     vac, weeks = export.export(con, cfg, args.date, ROOT / "reports")
+    html = export.standalone(vac, weeks, args.date, ROOT / "reports")
     print(f"\nRapport: {out}\nDashboard-data: reports/dashboard_vacatures.json ({len(vac)}), "
-          f"reports/dashboard_weken.json ({len(weeks)} regels)")
+          f"reports/dashboard_weken.json ({len(weeks)} regels)\nWeekrapport (HTML): {html}")
 
 
 if __name__ == "__main__":

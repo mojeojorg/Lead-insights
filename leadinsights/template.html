@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vacatureradar Limburg – __WEEK__</title>
+<style>
+  /* Losstaand weekrapport: werkt offline, zonder account. Liggende A4-bladen. */
+  :root { --bg: #ffffff; --panel: #f6f6f4; --fg: #1d1d1b; --muted: #6b6a66; --line: #e2e1dc; --ok: #2f7d4f; --bad: #b3402e;
+          --s1: #3b5b92; --s2: #c0793a; --s3: #4f8a6e; --s4: #9a4c79; --s5: #7d7a2f; --s6: #4a90a8; --s7: #a85a4a; --s8: #6c6c9c;
+          --serif: Georgia, "Times New Roman", serif; --sans: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #eceae4; color: var(--fg); font: 13px/1.4 var(--sans); }
+  .wrap { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 16px; }
+  .controls { width: 100%; max-width: 1123px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .frow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .flabel { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; min-width: 70px; }
+  .chip { font: inherit; font-size: 12px; cursor: pointer; border-radius: 999px; padding: 3px 10px; border: 1px solid var(--line); background: transparent; color: var(--muted); }
+  .chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+  .chip.prio::after { content: " ★"; }
+  .actions { display: flex; flex-wrap: wrap; gap: 14px; }
+  .link { font: inherit; font-size: 12px; background: none; border: 0; padding: 0; color: var(--muted); text-decoration: underline; cursor: pointer; }
+  .hint { color: var(--muted); font-size: 12px; margin: 0; }
+
+  .sheet { width: 100%; max-width: 1123px; aspect-ratio: 297 / 210; background: var(--bg); border: 1px solid var(--line); padding: 28px 34px; display: flex; flex-direction: column; gap: 18px; overflow: hidden; }
+  .sheet.grow { aspect-ratio: auto; min-height: calc(min(100vw, 1123px) / 1.414); overflow: visible; }
+  .head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+  h1, h2 { font-family: var(--serif); font-weight: 400; font-size: 28px; line-height: 1.1; margin: 0; }
+  .sub { color: var(--muted); margin: 4px 0 0; }
+  .meta { text-align: right; color: var(--muted); font-size: 12px; }
+  .week { display: block; font-family: var(--serif); font-size: 22px; color: var(--fg); }
+  .row-a { display: grid; grid-template-columns: 1fr 1.3fr 1.3fr; gap: 24px; }
+  .row-b { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; flex: 1; min-height: 0; }
+  .block { display: flex; flex-direction: column; gap: 6px; min-width: 0; min-height: 0; }
+  .h { font-size: 10.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin: 0; font-weight: 600; }
+  .total { font-family: var(--serif); font-size: 64px; line-height: 1; margin: 2px 0 0; }
+  .delta { margin: 4px 0 0; color: var(--muted); }
+  .up { color: var(--ok); font-weight: 600; } .down { color: var(--bad); font-weight: 600; } .flat { font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  .nums th { text-align: right; color: var(--muted); font-weight: 600; font-size: 11px; padding: 3px 0 4px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  .nums td { text-align: right; padding: 3px 0 3px 10px; border-bottom: 1px solid var(--line); }
+  .nums th:first-child, .nums td:first-child { text-align: left; padding-left: 0; }
+  .nums td.prio { font-weight: 600; }
+  .chart { position: relative; flex: 1; min-height: 140px; }
+  .chart svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .chart text { fill: var(--muted); font-size: 10.5px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 11px; color: var(--muted); min-height: 16px; }
+  .sw { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 4px; }
+  .note { color: var(--muted); font-size: 11px; margin: 0; }
+  .tip { position: absolute; pointer-events: none; background: var(--bg); border: 1px solid var(--line); box-shadow: 0 2px 8px rgba(0,0,0,.12); border-radius: 6px; padding: 3px 8px; font-size: 12px; white-space: nowrap; }
+  .empty { color: var(--muted); }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; align-content: start; }
+  .card { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; break-inside: avoid; }
+  .card-head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; margin-bottom: 4px; }
+  .card-name { font-weight: 600; font-size: 14px; }
+  .star { color: var(--ok); font-size: 11px; margin-left: 4px; }
+  .sum { color: var(--muted); font-size: 11.5px; white-space: nowrap; }
+  .orgs { list-style: none; margin: 0; padding: 0; }
+  .org { border-top: 1px solid var(--line); padding: 4px 0; }
+  .org-head { display: flex; justify-content: space-between; font-weight: 600; }
+  .jobs { margin: 2px 0 0; padding-left: 16px; color: var(--muted); font-size: 12px; }
+  .jobs a, .list a { color: var(--fg); }
+  .tag { font-size: 10.5px; border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; margin-left: 4px; }
+  .new { color: var(--ok); font-weight: 600; }
+  .list th { text-align: left; color: var(--muted); font-weight: 600; font-size: 11px; padding: 4px 6px; border-bottom: 1px solid var(--line); }
+  .list td { padding: 4px 6px; border-bottom: 1px solid var(--line); vertical-align: top; font-size: 12px; }
+  .list tr { break-inside: avoid; }
+
+  @media (max-width: 800px) { .sheet { aspect-ratio: auto; } .row-a, .row-b { grid-template-columns: 1fr; } .chart { height: 180px; flex: none; } }
+  @page { size: A4 landscape; margin: 0; }
+  @media print {
+    body { background: #fff; }
+    .wrap { padding: 0; gap: 0; }
+    .controls { display: none; }
+    .sheet { width: 297mm; max-width: none; height: 210mm; aspect-ratio: auto; border: 0; padding: 12mm 14mm; break-after: page; }
+    .sheet.grow { height: auto; min-height: 210mm; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="controls">
+    <div class="frow" id="f-groepen"><span class="flabel">Functie</span></div>
+    <div class="frow" id="f-branches"><span class="flabel">Branche</span></div>
+    <div class="actions">
+      <button class="link" id="standaard">Standaardselectie</button>
+      <button class="link" id="prio">Alleen prioriteitsbranches (★)</button>
+      <button class="link" id="allef">Alle functies aan</button>
+      <button class="link" id="alleb">Alle branches aan</button>
+    </div>
+    <p class="hint">Afdrukken of opslaan als PDF: Ctrl/Cmd + P, liggend A4. De filterbalk wordt niet afgedrukt.</p>
+  </div>
+
+  <section class="sheet" id="blad1">
+    <div class="head">
+      <div><h1>Vacatureradar Limburg</h1><p class="sub">Weekrapport voor de board · <span class="filtertekst"></span></p></div>
+      <div class="meta"><span class="week" id="weeknr"></span>peildatum <span id="peildatum"></span> · bron Banenrijk Limburg</div>
+    </div>
+    <div class="row-a">
+      <div class="block">
+        <p class="h">Open vacatures deze week</p>
+        <p class="total" id="totaal"></p>
+        <p class="delta" id="delta"></p>
+        <p style="margin:0">bij <b id="orgs"></b> organisaties, waarvan <b id="nieuw"></b> vacatures nieuw geplaatst in de laatste 7 dagen</p>
+      </div>
+      <div class="block"><p class="h">Per branche</p>
+        <table class="nums"><thead><tr><th>Branche</th><th>Deze week</th><th>Vorige week</th></tr></thead><tbody id="t-branche"></tbody></table></div>
+      <div class="block"><p class="h">Per functiegroep</p>
+        <table class="nums"><thead><tr><th>Functiegroep</th><th>Deze week</th><th>Vorige week</th></tr></thead><tbody id="t-groep"></tbody></table></div>
+    </div>
+    <div class="row-b">
+      <div class="block"><p class="h">Trend totaal · 13 weken</p><div class="chart" id="c-totaal"></div><div class="legend"></div></div>
+      <div class="block"><p class="h">Trend per functiegroep</p><div class="chart" id="c-groep"></div><div class="legend" id="l-groep"></div></div>
+      <div class="block"><p class="h">Trend per branche · top 6</p><div class="chart" id="c-branche"></div><div class="legend" id="l-branche"></div></div>
+    </div>
+    <p class="note">Telling per week op de peildatum. De meting loopt sinds week 48 van 2026; de trend vult zich wekelijks aan tot een venster van 13 weken.</p>
+  </section>
+
+  <section class="sheet grow" id="blad2">
+    <div class="head">
+      <div><h2>Details per branche</h2><p class="sub">Organisaties met open vacatures in de selectie · <span class="filtertekst"></span></p></div>
+      <div class="meta"><span class="week" id="weeknr2"></span></div>
+    </div>
+    <div class="cards" id="kaarten"></div>
+    <table class="list"><thead><tr><th>Functie</th><th>Groep</th><th>Organisatie</th><th>Branche</th><th>Plaats</th><th>Geplaatst</th><th>Geldig tot</th></tr></thead><tbody id="rijen"></tbody></table>
+  </section>
+</div>
+
+<script>
+const VACATURES = /*VACATURES*/[];
+const WEKEN = /*WEKEN*/[];
+
+const GROEPEN = ['Project', 'Programma', 'Agile', 'PMO', 'Informatie & analyse', 'IT-specialist', 'Management', 'Advies & beleid', 'Overig'];
+const GROEPEN_STD = ['Project', 'Programma', 'Agile', 'PMO'];
+const BRANCHES = ['Overheid', 'Zorg & Welzijn', 'ICT & Automatisering', 'Management, Beleid & Directie', 'Administratie', 'Facilitair', 'Finance', 'Horeca & Detailhandel', 'HR', 'Juridisch', 'Klantenservice & Receptie', 'Kwaliteit, Veiligheid & Milieu', 'Logistiek & Inkoop', 'Marketing & Communicatie', 'Onderwijs & Onderzoek', 'Sales', 'Techniek & Productie', 'Overig'];
+const PRIO = ['Overheid', 'Zorg & Welzijn', 'ICT & Automatisering', 'Management, Beleid & Directie'];
+const COLORS = ['--s1', '--s2', '--s3', '--s4', '--s5', '--s6', '--s7', '--s8'].map((v) => `var(${v})`);
+const state = { groepen: [...GROEPEN_STD], branches: [...BRANCHES] };
+
+const fmt = (n) => Number(n).toLocaleString('nl-NL');
+const fmtD = (n) => (n > 0 ? '+' : n < 0 ? '−' : '±') + fmt(Math.abs(n));
+const dateNl = (s) => { if (!s) return ''; const [y, m, d] = s.split('-'); return `${d}-${m}-${y}`; };
+const shortWeek = (w) => `W${Number(w.split('-W')[1])}`;
+const label = (k, dim) => (k === 'Overig' ? (dim === 'groep' ? 'Overige functies' : 'Overige branches') : k);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
+const safeUrl = (u) => (typeof u === 'string' && /^https?:\/\//.test(u)) ? u : null;
+const sum = (rows) => rows.reduce((a, r) => a + r.vacatures, 0);
+const match = (r) => state.groepen.includes(r.groep) && state.branches.includes(r.branche);
+const weeks = [...new Set(WEKEN.map((r) => r.week))].sort();
+const cur = weeks[weeks.length - 1];
+const prev = weeks.length > 1 ? weeks[weeks.length - 2] : null;
+const peildatum = (WEKEN.find((r) => r.week === cur) || {}).peildatum || '';
+
+function isoWeek(d) {
+  const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day);
+  const y = t.getUTCFullYear(); const w = Math.ceil(((t - Date.UTC(y, 0, 1)) / 864e5 + 1) / 7);
+  return `${y}-W${String(w).padStart(2, '0')}`;
+}
+const windowWeeks = (() => { const end = new Date(`${peildatum}T00:00:00Z`); const out = []; for (let k = 12; k >= 0; k--) out.push(isoWeek(new Date(end - k * 7 * 864e5))); return out; })();
+
+function chips(id, key, list, onByDefault) {
+  const box = document.getElementById(id);
+  list.forEach((v) => {
+    const b = el('button', 'chip' + (key === 'branches' && PRIO.includes(v) ? ' prio' : ''), label(v, key === 'groepen' ? 'groep' : 'branche'));
+    b.dataset.key = key; b.dataset.value = v;
+    b.addEventListener('click', () => { const l = state[key]; state[key] = l.includes(v) ? l.filter((x) => x !== v) : [...l, v]; render(); });
+    box.appendChild(b);
+  });
+}
+
+function perDim(dim) {
+  const sel = WEKEN.filter(match);
+  const keys = [...new Set(sel.filter((r) => r.week === cur || r.week === prev).map((r) => r[dim]))];
+  return keys.map((k) => ({ k, n: sum(sel.filter((r) => r.week === cur && r[dim] === k)), p: prev ? sum(sel.filter((r) => r.week === prev && r[dim] === k)) : null }))
+    .sort((a, b) => b.n - a.n || a.k.localeCompare(b.k, 'nl'));
+}
+
+function numTable(id, dim) {
+  const tb = document.getElementById(id);
+  const rows = perDim(dim);
+  if (!rows.length) { const tr = el('tr'); const td = el('td', 'empty', 'Geen vacatures in deze selectie.'); td.colSpan = 3; tr.appendChild(td); tb.replaceChildren(tr); return; }
+  tb.replaceChildren(...rows.map((r) => { const tr = el('tr'); tr.append(el('td', dim === 'branche' && PRIO.includes(r.k) ? 'prio' : '', label(r.k, dim)), el('td', '', fmt(r.n)), el('td', '', r.p === null ? '' : fmt(r.p))); return tr; }));
+}
+
+function trendSeries(dim, limit) {
+  const sel = WEKEN.filter((r) => match(r) && windowWeeks.includes(r.week));
+  if (!dim) return [['Totaal', weeks.filter((w) => windowWeeks.includes(w)).map((w) => ({ week: w, vacatures: sum(sel.filter((r) => r.week === w)) }))]];
+  const curN = (k) => sum(sel.filter((r) => r.week === cur && r[dim] === k));
+  let keys = [...new Set(sel.map((r) => r[dim]))].sort((a, b) => curN(b) - curN(a) || a.localeCompare(b, 'nl'));
+  if (limit) keys = keys.slice(0, limit);
+  return keys.map((k) => [k, weeks.filter((w) => windowWeeks.includes(w)).map((w) => ({ week: w, vacatures: sum(sel.filter((r) => r.week === w && r[dim] === k)) }))]);
+}
+
+function chart(id, series, dim) {
+  const box = document.getElementById(id);
+  box.replaceChildren();
+  const W = box.clientWidth || 300, H = box.clientHeight || 160;
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg'); svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', 'Trend van open vacatures over 13 weken');
+  const mk = (t, a) => { const n = document.createElementNS(ns, t); Object.entries(a).forEach(([k, v]) => n.setAttribute(k, v)); svg.appendChild(n); return n; };
+  const all = series.flatMap(([, pts]) => pts);
+  if (!all.length || !all.some((p) => p.vacatures > 0)) { box.appendChild(el('p', 'empty', 'Geen vacatures in deze selectie.')); return; }
+  const maxRaw = Math.max(4, ...all.map((p) => p.vacatures));
+  const step = Math.ceil(maxRaw / 4); const maxY = step * 4;
+  const ticks = [0, step, 2 * step, 3 * step, 4 * step];
+  const m = { t: 14, r: 10, b: 22, l: 10 + String(fmt(maxY)).length * 7 };
+  const x = (w) => m.l + (windowWeeks.indexOf(w) + 0.5) * ((W - m.l - m.r) / windowWeeks.length);
+  const y = (v) => H - m.b - (v / maxY) * (H - m.t - m.b);
+  ticks.forEach((t) => { mk('line', { x1: m.l, x2: W - m.r, y1: y(t), y2: y(t), stroke: '#ecebe6' }); const tx = mk('text', { x: m.l - 6, y: y(t) + 3.5, 'text-anchor': 'end' }); tx.textContent = fmt(t); });
+  const every = W < 260 ? 4 : W < 380 ? 2 : 1;
+  windowWeeks.forEach((w, i) => { if ((windowWeeks.length - 1 - i) % every) return; const tx = mk('text', { x: x(w), y: H - 6, 'text-anchor': 'middle' }); tx.textContent = shortWeek(w); });
+  const tip = el('div', 'tip'); tip.hidden = true;
+  series.forEach(([name, pts], i) => {
+    const col = COLORS[i % COLORS.length];
+    if (pts.length > 1) { const p = mk('path', { d: pts.map((q, j) => `${j ? 'L' : 'M'}${x(q.week)},${y(q.vacatures)}`).join(''), fill: 'none', 'stroke-width': 2 }); p.style.stroke = col; }
+    pts.forEach((q, j) => {
+      const c = mk('circle', { cx: x(q.week), cy: y(q.vacatures), r: j === pts.length - 1 ? 4 : 2.5 }); c.style.fill = col;
+      c.addEventListener('mouseenter', (ev) => { tip.textContent = `${dim ? label(name, dim) + ' · ' : ''}${shortWeek(q.week)}: ${fmt(q.vacatures)}`; tip.hidden = false; const b = box.getBoundingClientRect(); tip.style.left = `${Math.max(0, Math.min(ev.clientX - b.left + 8, b.width - 120))}px`; tip.style.top = `${Math.max(0, ev.clientY - b.top - 28)}px`; });
+      c.addEventListener('mouseleave', () => { tip.hidden = true; });
+    });
+    if (!dim && pts.length) { const q = pts[pts.length - 1]; const tx = mk('text', { x: x(q.week), y: y(q.vacatures) - 8, 'text-anchor': 'middle' }); tx.textContent = fmt(q.vacatures); }
+  });
+  box.append(svg, tip);
+}
+
+function legend(id, series, dim) {
+  const box = document.getElementById(id);
+  box.replaceChildren(...series.map(([name, pts], i) => {
+    const s = el('span'); const sw = el('span', 'sw'); sw.style.background = COLORS[i % COLORS.length];
+    const last = pts.find((p) => p.week === cur);
+    s.append(sw, document.createTextNode(`${label(name, dim)} ${last ? fmt(last.vacatures) : 0}`)); return s;
+  }));
+}
+
+function details() {
+  const rows = VACATURES.filter(match);
+  const kaarten = document.getElementById('kaarten');
+  const groups = {};
+  rows.forEach((v) => { (groups[v.branche] = groups[v.branche] || []).push(v); });
+  const order = Object.keys(groups).sort((a, b) => (PRIO.includes(b) - PRIO.includes(a)) || groups[b].length - groups[a].length || a.localeCompare(b, 'nl'));
+  if (!order.length) { kaarten.replaceChildren(el('p', 'empty', 'Geen vacatures in deze selectie.')); }
+  else kaarten.replaceChildren(...order.map((br) => {
+    const card = el('div', 'card'); const head = el('div', 'card-head');
+    const nm = el('span', 'card-name', label(br, 'branche')); if (PRIO.includes(br)) nm.appendChild(el('span', 'star', '★ prioriteit'));
+    const orgs = {}; groups[br].forEach((v) => { (orgs[v.bedrijf] = orgs[v.bedrijf] || []).push(v); });
+    const on = Object.keys(orgs).sort((a, b) => orgs[b].length - orgs[a].length || a.localeCompare(b, 'nl'));
+    head.append(nm, el('span', 'sum', `${fmt(groups[br].length)} vac. · ${fmt(on.length)} org.`));
+    const ul = el('ul', 'orgs');
+    on.forEach((o) => {
+      const li = el('li', 'org'); const oh = el('div', 'org-head'); oh.append(el('span', '', o), el('span', '', fmt(orgs[o].length)));
+      const jl = el('ul', 'jobs');
+      orgs[o].forEach((j) => { const u = safeUrl(j.url); const jli = el('li'); const a = u ? Object.assign(el('a', '', j.functie), { href: u, target: '_blank', rel: 'noopener' }) : el('span', '', j.functie);
+        jli.append(a, el('span', 'tag', j.groep), document.createTextNode(` · ${j.plaats}`)); if (j.nieuw) jli.appendChild(el('span', 'new', ' nieuw')); jl.appendChild(jli); });
+      li.append(oh, jl); ul.appendChild(li);
+    });
+    card.append(head, ul); return card;
+  }));
+  const ord = (b) => { const i = BRANCHES.indexOf(b); return i < 0 ? 99 : i; };
+  const tb = document.getElementById('rijen');
+  tb.replaceChildren(...[...rows].sort((a, b) => ord(a.branche) - ord(b.branche) || a.bedrijf.localeCompare(b.bedrijf, 'nl')).map((v) => {
+    const tr = el('tr'); const td = el('td'); const u = safeUrl(v.url);
+    td.appendChild(u ? Object.assign(el('a', '', v.functie), { href: u, target: '_blank', rel: 'noopener' }) : document.createTextNode(v.functie));
+    if (v.nieuw) td.appendChild(el('span', 'new', ' nieuw'));
+    tr.append(td, el('td', '', v.groep), el('td', '', v.bedrijf), el('td', '', v.branche), el('td', '', v.plaats), el('td', '', dateNl(v.geplaatst)), el('td', '', v.geldig_tot ? dateNl(v.geldig_tot) : 'doorlopend'));
+    return tr;
+  }));
+}
+
+function render() {
+  document.querySelectorAll('.chip').forEach((b) => b.setAttribute('aria-pressed', String(state[b.dataset.key].includes(b.dataset.value))));
+  const g = state.groepen, b = state.branches;
+  const gt = g.length === GROEPEN.length ? 'alle functies' : (g.length ? g.map((x) => label(x, 'groep')).join(', ') : 'geen functies');
+  const prioOnly = b.length === PRIO.length && PRIO.every((x) => b.includes(x));
+  const bt = b.length === BRANCHES.length ? 'alle branches' : prioOnly ? 'prioriteitsbranches' : (b.length ? `${b.length} branches` : 'geen branches');
+  document.querySelectorAll('.filtertekst').forEach((s) => { s.textContent = `${gt} · ${bt}`; });
+  const wl = cur ? `Week ${Number(cur.split('-W')[1])}` : '';
+  document.getElementById('weeknr').textContent = wl; document.getElementById('weeknr2').textContent = wl;
+  document.getElementById('peildatum').textContent = dateNl(peildatum);
+  const sel = WEKEN.filter(match);
+  const n = sum(sel.filter((r) => r.week === cur)); const p = prev ? sum(sel.filter((r) => r.week === prev)) : null;
+  document.getElementById('totaal').textContent = fmt(n);
+  const d = document.getElementById('delta');
+  if (p === null) d.textContent = 'Eerste meting, nog geen vergelijking met vorige week';
+  else { d.replaceChildren(el('span', n > p ? 'up' : n < p ? 'down' : 'flat', fmtD(n - p)), document.createTextNode(` t.o.v. vorige week (${fmt(p)})`)); }
+  document.getElementById('orgs').textContent = fmt(new Set(sel.filter((r) => r.week === cur).map((r) => r.bedrijf)).size);
+  document.getElementById('nieuw').textContent = fmt(VACATURES.filter((v) => match(v) && v.nieuw).length);
+  numTable('t-branche', 'branche'); numTable('t-groep', 'groep');
+  chart('c-totaal', trendSeries(null), null);
+  const sg = trendSeries('groep', 0); chart('c-groep', sg, 'groep'); legend('l-groep', sg, 'groep');
+  const sb = trendSeries('branche', 6); chart('c-branche', sb, 'branche'); legend('l-branche', sb, 'branche');
+  details();
+}
+
+chips('f-groepen', 'groepen', GROEPEN);
+chips('f-branches', 'branches', BRANCHES);
+document.getElementById('standaard').onclick = () => { state.groepen = [...GROEPEN_STD]; state.branches = [...BRANCHES]; render(); };
+document.getElementById('prio').onclick = () => { state.branches = [...PRIO]; render(); };
+document.getElementById('allef').onclick = () => { state.groepen = [...GROEPEN]; render(); };
+document.getElementById('alleb').onclick = () => { state.branches = [...BRANCHES]; render(); };
+window.addEventListener('resize', () => render());
+window.addEventListener('beforeprint', () => render());
+render();
+</script>
+</body>
+</html>

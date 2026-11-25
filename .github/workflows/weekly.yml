@@ -29,4 +29,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: weekoverzicht
-          path: reports/*.xlsx
+          path: |
+            reports/*.xlsx
+            reports/vacatureradar_*.html

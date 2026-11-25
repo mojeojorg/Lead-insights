@@ -19,6 +19,8 @@ De eerste run haalt alle vacatures op (ongeveer 15 minuten). Daarna worden allee
 Pas `config.yaml` aan: trefwoorden in de functietitel, branches, regio of plaatsen, en welke bemiddelaars je uitsluit.
 
 ## Output
+`reports/vacatureradar_<jaar>-W<week>.html` is het weekrapport voor de board: één bestand dat in elke browser opent (ook offline), met filters, en via Ctrl/Cmd+P als liggend A4 naar PDF kan.
+
 `reports/vacatures_<jaar>-W<week>.xlsx` bevat drie tabbladen:
 - **Per bedrijf**: open vacatures, nieuw deze week, vorige week en het verschil.
 - **Nieuw deze week**
