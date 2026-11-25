@@ -18,11 +18,22 @@ ROOT = Path(__file__).parent
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--report", action="store_true", help="alleen rapport, niet scrapen")
+    ap.add_argument("--backfill", action="store_true",
+                    help="details (o.a. vacaturetekst) ophalen voor bekende vacatures zonder tekst")
     ap.add_argument("--date", default=dt.date.today().isoformat())
     args = ap.parse_args()
 
     cfg = yaml.safe_load((ROOT / "config.yaml").read_text()) or {}
     con = db.connect(ROOT / "data" / "vacatures.db")
+
+    if args.backfill:
+        todo = [(r["id"], r["url"]) for r in con.execute(
+            "SELECT id, url FROM vacancies WHERE description IS NULL")]
+        print(f"Backfill: {len(todo)} vacatures")
+        rows = banenrijk.fetch_many(todo)
+        db.update_details(con, rows)
+        print(f"Bijgewerkt: {len(rows)}")
+        return
 
     if not args.report:
         active = banenrijk.list_active()

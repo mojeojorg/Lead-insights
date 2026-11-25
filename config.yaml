@@ -9,7 +9,7 @@ relevance:
 
 region:
   # Regio's zoals Banenrijk ze noemt: "Zuid Limburg", "Midden Limburg", "Noord Limburg".
-  regions: [Zuid Limburg, Midden Limburg, Noord Limburg, Limburg]
+  regions: []   # leeg = alles (Limburg + Brabant)
   # Of specifieke plaatsen.
   cities: []
 

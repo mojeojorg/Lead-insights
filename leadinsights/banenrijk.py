@@ -6,6 +6,7 @@ regio, branche en datums. We halen alleen pagina's op van vacatures die we
 nog niet kennen; bekende vacatures worden alleen als 'nog actief' gemarkeerd.
 """
 
+import html
 import json
 import re
 import time
@@ -46,6 +47,12 @@ def _find_jobposting(obj):
     return None
 
 
+def _text(desc_html):
+    t = re.sub(r"<(br|/p|/li|/h[1-6])[^>]*>", "\n", desc_html)
+    t = html.unescape(re.sub(r"<[^>]+>", "", t))
+    return re.sub(r"\n\s*\n+", "\n", t).strip()
+
+
 def fetch_vacancy(vid, url):
     for attempt in range(3):
         try:
@@ -65,6 +72,7 @@ def fetch_vacancy(vid, url):
             continue
         if jp:
             addr = (jp.get("jobLocation") or {}).get("address") or {}
+            sal = ((jp.get("baseSalary") or {}).get("value")) or {}
             return {
                 "id": vid,
                 "source": SOURCE,
@@ -78,6 +86,13 @@ def fetch_vacancy(vid, url):
                 "employment_type": jp.get("employmentType") or "",
                 "date_posted": (jp.get("datePosted") or "")[:10],
                 "valid_through": (jp.get("validThrough") or "")[:10],
+                "salary_min": sal.get("minValue"),
+                "salary_max": sal.get("maxValue"),
+                "salary_unit": sal.get("unitText") if (sal.get("minValue") or sal.get("maxValue")) else None,
+                "work_hours": jp.get("workHours") or "",
+                "education": (jp.get("educationRequirements") or {}).get("credentialCategory") or "",
+                "company_website": (jp.get("hiringOrganization") or {}).get("sameAs") or "",
+                "description": _text(jp.get("description") or ""),
             }
     return None
 
