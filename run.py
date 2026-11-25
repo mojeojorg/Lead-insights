@@ -10,7 +10,7 @@ from pathlib import Path
 
 import yaml
 
-from leadinsights import banenrijk, db, report
+from leadinsights import banenrijk, db, export, report
 
 ROOT = Path(__file__).parent
 
@@ -52,7 +52,8 @@ def main():
           + (f", {s['new']} nieuw t.o.v. {s['previous_run']}" if s["previous_run"] else ""))
     for company, n in s["top"]:
         print(f"  {n:4d}  {company}")
-    print(f"\nRapport: {out}")
+    rows = export.export(con, cfg, args.date, ROOT / "reports" / "dashboard.json")
+    print(f"\nRapport: {out}\nDashboard-data: reports/dashboard.json ({len(rows)} vacatures)")
 
 
 if __name__ == "__main__":

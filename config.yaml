@@ -24,6 +24,14 @@ relevance:
   # Optioneel: alleen deze branches (leeg = alle branches).
   industries: []
 
+# Functiegroepen voor het dashboard: eerste groep waarvan een term in de titel staat.
+function_groups:
+  PMO: [pmo]
+  Programma: [programmamanager, programma manager, program manager, programmaleider]
+  Agile: [agile coach, scrum master, scrummaster, product owner, release train]
+  Project: [projectleider, projectmanager, project manager, project lead, projectcontroller,
+            change manager, kwartiermaker]
+
 # Sectoren met prioriteit voor Mojeo. Vacatures krijgen een sectorlabel;
 # prioriteitssectoren worden in het rapport gemarkeerd (niet weggefilterd).
 sectors:
