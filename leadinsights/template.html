@@ -86,8 +86,8 @@
     <div class="frow" id="f-groepen"><span class="flabel">Functies</span></div>
     <div class="frow" id="f-branches"><span class="flabel">Branche</span></div>
     <div class="actions">
-      <button class="link" id="standaard">Interessante functies, alle branches (standaard)</button>
-      <button class="link" id="prio">Alleen prioriteitsbranches (★)</button>
+      <button class="link" id="standaard">Interessante functies, voorkeurbranches (standaard)</button>
+      <button class="link" id="prio">Alleen voorkeurbranches (★)</button>
       <button class="link" id="allef">Alle functies aan</button>
       <button class="link" id="alleb">Alle branches aan</button>
     </div>
@@ -138,7 +138,7 @@ const GROEPEN_STD = ['Project', 'Programma', 'Agile', 'PMO'];
 const BRANCHES = ['Overheid', 'Zorg & Welzijn', 'ICT & Automatisering', 'Management, Beleid & Directie', 'Administratie', 'Facilitair', 'Finance', 'Horeca & Detailhandel', 'HR', 'Juridisch', 'Klantenservice & Receptie', 'Kwaliteit, Veiligheid & Milieu', 'Logistiek & Inkoop', 'Marketing & Communicatie', 'Onderwijs & Onderzoek', 'Sales', 'Techniek & Productie', 'Overig'];
 const PRIO = ['Overheid', 'Zorg & Welzijn', 'ICT & Automatisering', 'Management, Beleid & Directie'];
 const COLORS = ['--s1', '--s2', '--s3', '--s4', '--s5', '--s6', '--s7', '--s8'].map((v) => `var(${v})`);
-const state = { groepen: [...GROEPEN_STD], branches: [...BRANCHES] };
+const state = { groepen: [...GROEPEN_STD], branches: [...PRIO] };
 
 const fmt = (n) => Number(n).toLocaleString('nl-NL');
 const fmtD = (n) => (n > 0 ? '+' : n < 0 ? '−' : '±') + fmt(Math.abs(n));
@@ -255,7 +255,7 @@ function details() {
   if (!order.length) { kaarten.replaceChildren(el('p', 'empty', 'Geen vacatures in deze selectie.')); }
   else kaarten.replaceChildren(...order.map((br) => {
     const card = el('div', 'card'); const head = el('div', 'card-head');
-    const nm = el('span', 'card-name', label(br, 'branche')); if (PRIO.includes(br)) nm.appendChild(el('span', 'star', '★ prioriteit'));
+    const nm = el('span', 'card-name', label(br, 'branche')); if (PRIO.includes(br)) nm.appendChild(el('span', 'star', '★ voorkeur'));
     const orgs = {}; groups[br].forEach((v) => { (orgs[v.bedrijf] = orgs[v.bedrijf] || []).push(v); });
     const on = Object.keys(orgs).sort((a, b) => orgs[b].length - orgs[a].length || a.localeCompare(b, 'nl'));
     head.append(nm, el('span', 'sum', `${fmt(groups[br].length)} vac. · ${fmt(on.length)} org.`));
@@ -286,7 +286,7 @@ function render() {
   const isStd = g.length === GROEPEN_STD.length && GROEPEN_STD.every((x) => g.includes(x));
   const gt = g.length === GROEPEN.length ? 'alle functies' : isStd ? 'interessante functies (Project, Programma, Agile, PMO)' : (g.length ? g.map((x) => label(x, 'groep')).join(', ') : 'geen functies');
   const prioOnly = b.length === PRIO.length && PRIO.every((x) => b.includes(x));
-  const bt = b.length === BRANCHES.length ? 'alle branches' : prioOnly ? 'prioriteitsbranches' : (b.length ? `${b.length} branches` : 'geen branches');
+  const bt = b.length === BRANCHES.length ? 'alle branches' : prioOnly ? 'voorkeurbranches (Overheid, Zorg, ICT, Management)' : (b.length ? `${b.length} branches` : 'geen branches');
   document.querySelectorAll('.filtertekst').forEach((s) => { s.textContent = `${gt} · ${bt}`; });
   const wl = cur ? `Week ${Number(cur.split('-W')[1])}` : '';
   document.getElementById('weeknr').textContent = wl; document.getElementById('weeknr2').textContent = wl;
@@ -309,7 +309,7 @@ function render() {
 
 chips('f-groepen', 'groepen', GROEPEN);
 chips('f-branches', 'branches', BRANCHES);
-document.getElementById('standaard').onclick = () => { state.groepen = [...GROEPEN_STD]; state.branches = [...BRANCHES]; render(); };
+document.getElementById('standaard').onclick = () => { state.groepen = [...GROEPEN_STD]; state.branches = [...PRIO]; render(); };
 document.getElementById('prio').onclick = () => { state.branches = [...PRIO]; render(); };
 document.getElementById('allef').onclick = () => { state.groepen = [...GROEPEN]; render(); };
 document.getElementById('alleb').onclick = () => { state.branches = [...BRANCHES]; render(); };
